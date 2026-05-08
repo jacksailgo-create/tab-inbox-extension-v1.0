@@ -30,12 +30,44 @@ It is designed to be local-first: rule matching, grouping memory, dashboard stat
 
 ## Core automation
 
-Tab Inbox can use AI-assisted automation to classify unknown tabs, suggest safe grouping actions, and keep reviewable history before any reusable rules are created. Its automated workspace flow collects pages from the same task context, surfaces uncertain pages for review, and lets you enter a focused workbench without turning temporary organization into permanent rules.
+Tab Inbox is built around three automation loops: AI classification, temporary workspaces, and memory that learns from your corrections.
+
+### AI automatic classification
+
+When local rules and built-in categories are not enough, Tab Inbox can call your configured OpenAI-compatible endpoint to classify unknown tabs. The AI flow is designed to stay reviewable:
+
+- It reads only lightweight tab metadata such as title, URL, domain, page type, current group, and duplicate signals.
+- It returns a category, confidence score, intent, short reason, and optional new-category suggestion.
+- High-confidence matches can be applied automatically according to your threshold settings.
+- Medium-confidence matches become pending suggestions, so you can accept or ignore them before they affect your tab groups.
+- AI history records token usage, confidence, reasons, and outcomes so you can audit what happened.
+
+### Automated workspace
+
+The workspace is for temporary focus, not permanent taxonomy. Tab Inbox can analyze the current browser window and turn scattered pages into a task-focused workbench:
+
+- It detects same-context pages that likely belong to the task you are doing now.
+- It separates pages that should enter the workspace, pages that should be reviewed first, pages to save for later, and safe duplicate tabs to close.
+- It lets you enter a workspace in one action while preserving the original grouping context where possible.
+- It avoids creating reusable rules from one-off workspace actions, so temporary cleanup does not pollute future automation.
+
+### Memory that learns your intent
+
+Tab Inbox keeps a stable local memory of repeated manual decisions. If you move the same kind of page into the same group several times, the extension can mature that signal into a trusted grouping hint.
+
+- Manual moves and high-confidence accepted decisions can become local memory.
+- Memories track hit counts, confidence, sample URLs, sample titles, and last-used timestamps.
+- Mature memories can beat generic built-in categories when they better match your personal workflow.
+- You can inspect, merge, and delete memories from the dashboard.
+- Memory stays in Chrome extension storage and follows the local-first privacy model.
 
 ## Highlights
 
 - Dashboard-first workflow opened from the Chrome extension icon.
 - Local grouping with built-in categories, custom groups, user rules, and memory from manual moves.
+- AI automatic classification with confidence thresholds, pending suggestions, audit history, and token usage.
+- Automated workspace plans that collect same-context pages without creating permanent rules.
+- Stable local memory that learns repeated manual grouping intent.
 - Review actions for closing, saving for later, archiving, keeping, skipping, and grouping tabs.
 - Workspace tools for temporary focus groups and later lists.
 - Optional AI organization through a user-provided OpenAI-compatible endpoint.
