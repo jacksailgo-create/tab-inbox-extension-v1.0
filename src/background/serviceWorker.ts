@@ -1,6 +1,6 @@
 import { applyGroupDecision } from "../actions/groupActionExecutor";
 import { type AiCategoryContext, requestAiClassification, requestAiConnectionTest } from "../classifier/aiClassifier";
-import { requestAiWindowOrganization } from "../classifier/aiWindowOrganizer";
+import { requestAiWindowOrganization, type AiWindowLanguage } from "../classifier/aiWindowOrganizer";
 import { SYSTEM_CATEGORY_NAMES, UNCATEGORIZED_CATEGORY_NAME } from "../classifier/systemCategories";
 import { extractPageContext, getClassifiableUrl } from "../context/pageContextExtractor";
 import { normalizeUrl } from "../context/urlNormalizer";
@@ -1274,9 +1274,9 @@ async function handleRuntimeMessage(message: unknown, sender?: chrome.runtime.Me
         .slice(0, limit);
     }
     case "ai-window:analyze-current":
-      return analyzeCurrentWindow(sender?.tab);
+      return analyzeCurrentWindow(sender?.tab, parseUiLanguage(typed.language));
     case "ai-window:local-preview":
-      return previewCurrentWindowLocally(sender?.tab);
+      return previewCurrentWindowLocally(sender?.tab, parseUiLanguage(typed.language));
     case "ai-window:apply": {
       const planId = typeof typed.planId === "string" ? typed.planId : "";
       const actionIds = Array.isArray(typed.actionIds)
@@ -1349,8 +1349,60 @@ async function handlePageSeen(senderTab?: chrome.tabs.Tab): Promise<boolean> {
   return true;
 }
 
-async function analyzeCurrentWindow(senderTab?: chrome.tabs.Tab): Promise<AiWindowPlan> {
-  const basePlan = await createLocalAiWindowPlan(senderTab);
+function parseUiLanguage(language: unknown): AiWindowLanguage {
+  return language === "en" ? "en" : "zh";
+}
+
+function uiText(language: AiWindowLanguage, key: string, values: Record<string, number | string> = {}): string {
+  const messages: Record<AiWindowLanguage, Record<string, string>> = {
+    zh: {
+      dailyLimit: "{summary} AI 每日请求上限已达到，仅显示本地建议。",
+      aiFailed: "{summary} AI 请求失败，仅显示本地建议：{error}",
+      noWindow: "无法识别这个窗口",
+      noTabs: "这个窗口没有可整理的网页标签页",
+      localDuplicatesSummary: "本地发现 {count} 个可关闭重复页。",
+      localNoActionsSummary: "本地未发现明确可执行的重复页，等待 AI 进一步判断。",
+      localDuplicateTitle: "本地重复页",
+      localDuplicateDescription: "这些建议只来自 URL 去重，不依赖 AI。",
+      closeLocalDuplicates: "关闭本地识别的重复页",
+      closeLocalDuplicatesReason: "URL 完全重复，保留每组一个页面。{preview}",
+      duplicatePreview: "重复页包括：{preview}",
+      currentTaskWorkspace: "当前任务工作台",
+      workspaceSummary: "这些页面可作为同一任务继续处理。",
+      aiSameTaskReason: "AI 判断这些页面属于同一任务语境。",
+      aiCurrentTaskSummary: "AI 建议把这些页面作为同一任务继续处理。",
+      aiCurrentTaskReason: "AI 判断这些页面属于当前任务。",
+      taskWorkspaceIndexed: "任务工作台 {index}",
+      workspaceCandidateFallback: "建议作为同一任务语境继续处理。",
+      workspaceReasonFallback: "这些页面看起来属于同一个可继续处理的任务。"
+    },
+    en: {
+      dailyLimit: "{summary} The AI daily request limit has been reached, so only local suggestions are shown.",
+      aiFailed: "{summary} AI request failed, so only local suggestions are shown: {error}",
+      noWindow: "Could not identify this window",
+      noTabs: "This window has no organizeable web tabs",
+      localDuplicatesSummary: "Found {count} duplicate tabs that can be closed locally.",
+      localNoActionsSummary: "No clear local duplicate actions were found; waiting for AI to evaluate further.",
+      localDuplicateTitle: "Local duplicates",
+      localDuplicateDescription: "These suggestions come only from URL deduplication and do not use AI.",
+      closeLocalDuplicates: "Close locally detected duplicates",
+      closeLocalDuplicatesReason: "The URLs are exact duplicates. Keep one page from each set.{preview}",
+      duplicatePreview: " Duplicate tabs include: {preview}",
+      currentTaskWorkspace: "Current task workspace",
+      workspaceSummary: "These pages can continue as one task.",
+      aiSameTaskReason: "AI judged that these pages share one task context.",
+      aiCurrentTaskSummary: "AI suggests continuing these pages as one task.",
+      aiCurrentTaskReason: "AI judged that these pages belong to the current task.",
+      taskWorkspaceIndexed: "Task workspace {index}",
+      workspaceCandidateFallback: "Recommended as one task context to continue.",
+      workspaceReasonFallback: "These pages look like one task you can continue."
+    }
+  };
+  return (messages[language][key] || key).replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? ""));
+}
+
+async function analyzeCurrentWindow(senderTab?: chrome.tabs.Tab, language: AiWindowLanguage = "zh"): Promise<AiWindowPlan> {
+  const basePlan = await createLocalAiWindowPlan(senderTab, language);
   const aiSettings = await getAiSettings();
   if (!aiSettings.enabled || !aiSettings.baseUrl || !aiSettings.model || !aiSettings.apiKey) {
     await appendAiWindowPlan(basePlan);
@@ -1362,7 +1414,7 @@ async function analyzeCurrentWindow(senderTab?: chrome.tabs.Tab): Promise<AiWind
   if (usage.count >= aiSettings.dailyLimit) {
     const limitedPlan = {
       ...basePlan,
-      summary: `${basePlan.summary} AI 每日请求上限已达到，仅显示本地建议。`
+      summary: uiText(language, "dailyLimit", { summary: basePlan.summary })
     };
     await appendAiWindowPlan(limitedPlan);
     return limitedPlan;
@@ -1372,14 +1424,14 @@ async function analyzeCurrentWindow(senderTab?: chrome.tabs.Tab): Promise<AiWind
   const countedUsage = { ...usage, count: usage.count + 1 };
   await chrome.storage.local.set({ [STORAGE_KEYS.aiUsage]: countedUsage });
   try {
-    const draft = await requestAiWindowOrganization(basePlan.windowId, basePlan.tabs, aiSettings);
+    const draft = await requestAiWindowOrganization(basePlan.windowId, basePlan.tabs, aiSettings, { language });
     await chrome.storage.local.set({
       [STORAGE_KEYS.aiUsage]: addAiTokenUsage(countedUsage, draft.usage)
     });
     plan = {
       ...basePlan,
       summary: draft.summary || basePlan.summary,
-      workspaceCandidates: mergeAiWindowWorkspaceCandidates(draft.workspaceCandidates, draft.contexts, draft.actions, basePlan.tabs),
+      workspaceCandidates: mergeAiWindowWorkspaceCandidates(draft.workspaceCandidates, draft.contexts, draft.actions, basePlan.tabs, language),
       contexts: mergeAiWindowContexts(basePlan.contexts, draft.contexts),
       actions: mergeAiWindowActions(basePlan.actions, draft.actions),
       promptTokens: draft.usage.promptTokens,
@@ -1389,21 +1441,24 @@ async function analyzeCurrentWindow(senderTab?: chrome.tabs.Tab): Promise<AiWind
   } catch (error) {
     plan = {
       ...basePlan,
-      summary: `${basePlan.summary} AI 请求失败，仅显示本地建议：${error instanceof Error ? error.message : String(error)}`
+      summary: uiText(language, "aiFailed", {
+        summary: basePlan.summary,
+        error: error instanceof Error ? error.message : String(error)
+      })
     };
   }
   await appendAiWindowPlan(plan);
   return plan;
 }
 
-async function previewCurrentWindowLocally(senderTab?: chrome.tabs.Tab): Promise<AiWindowPlan> {
-  return createLocalAiWindowPlan(senderTab);
+async function previewCurrentWindowLocally(senderTab?: chrome.tabs.Tab, language: AiWindowLanguage = "zh"): Promise<AiWindowPlan> {
+  return createLocalAiWindowPlan(senderTab, language);
 }
 
-async function createLocalAiWindowPlan(senderTab?: chrome.tabs.Tab): Promise<AiWindowPlan> {
+async function createLocalAiWindowPlan(senderTab?: chrome.tabs.Tab, language: AiWindowLanguage = "zh"): Promise<AiWindowPlan> {
   const sourceTab = await resolveCurrentTab(senderTab);
   const windowId = sourceTab?.windowId;
-  if (typeof windowId !== "number") throw new Error("无法识别这个窗口");
+  if (typeof windowId !== "number") throw new Error(uiText(language, "noWindow"));
 
   const tabs = (await chrome.tabs.query({ windowId }))
     .filter((tab): tab is chrome.tabs.Tab & { id: number; windowId: number; url: string } =>
@@ -1412,24 +1467,24 @@ async function createLocalAiWindowPlan(senderTab?: chrome.tabs.Tab): Promise<AiW
       typeof tab.url === "string" &&
       isOrdinaryWebPageUrl(tab.url)
     );
-  if (!tabs.length) throw new Error("这个窗口没有可整理的网页标签页");
+  if (!tabs.length) throw new Error(uiText(language, "noTabs"));
 
   const now = Date.now();
   const snapshots = await createAiWindowTabSnapshots(tabs);
   const localSignals = createAiWindowLocalSignals(snapshots);
-  const actions = createLocalAiWindowActions(localSignals, snapshots);
+  const actions = createLocalAiWindowActions(localSignals, snapshots, language);
   return {
     id: makeId("ai_window"),
     windowId,
     summary: actions.length
-      ? `本地发现 ${localSignals.duplicateTabIds.length} 个可关闭重复页。`
-      : "本地未发现明确可执行的重复页，等待 AI 进一步判断。",
+      ? uiText(language, "localDuplicatesSummary", { count: localSignals.duplicateTabIds.length })
+      : uiText(language, "localNoActionsSummary"),
     localSignals,
     workspaceCandidates: [],
     contexts: actions.length ? [{
       id: "ctx_local_duplicates",
-      title: "本地重复页",
-      description: "这些建议只来自 URL 去重，不依赖 AI。",
+      title: uiText(language, "localDuplicateTitle"),
+      description: uiText(language, "localDuplicateDescription"),
       tabIds: localSignals.duplicateTabIds
     }] : [],
     actions,
@@ -1523,7 +1578,11 @@ function createAiWindowLocalSignals(tabs: AiWindowTabSnapshot[]): AiWindowLocalS
   };
 }
 
-function createLocalAiWindowActions(localSignals: AiWindowLocalSignals, tabs: AiWindowTabSnapshot[]): AiWindowAction[] {
+function createLocalAiWindowActions(
+  localSignals: AiWindowLocalSignals,
+  tabs: AiWindowTabSnapshot[],
+  language: AiWindowLanguage = "zh"
+): AiWindowAction[] {
   if (!localSignals.duplicateTabIds.length) return [];
   const titleById = new Map(tabs.map((tab) => [tab.tabId, tab.title || tab.domain]));
   const preview = localSignals.duplicateTabIds
@@ -1535,8 +1594,10 @@ function createLocalAiWindowActions(localSignals: AiWindowLocalSignals, tabs: Ai
     id: "aiwin_local_close_duplicates",
     kind: "close_duplicate",
     tabIds: localSignals.duplicateTabIds,
-    title: "关闭本地识别的重复页",
-    reason: `URL 完全重复，保留每组一个页面。${preview ? `重复页包括：${preview}` : ""}`,
+    title: uiText(language, "closeLocalDuplicates"),
+    reason: uiText(language, "closeLocalDuplicatesReason", {
+      preview: preview ? uiText(language, "duplicatePreview", { preview }) : ""
+    }),
     confidence: 0.98,
     contextId: "ctx_local_duplicates"
   }];
@@ -1546,15 +1607,16 @@ function mergeAiWindowWorkspaceCandidates(
   aiCandidates: AiWindowWorkspaceCandidate[],
   aiContexts: AiWindowPlan["contexts"],
   aiActions: AiWindowAction[],
-  tabs: AiWindowTabSnapshot[]
+  tabs: AiWindowTabSnapshot[],
+  language: AiWindowLanguage = "zh"
 ): AiWindowWorkspaceCandidate[] {
   const validTabIds = new Set(tabs.map((tab) => tab.tabId));
   const candidates = aiCandidates.length
     ? aiCandidates
-    : createWorkspaceCandidatesFromActions(aiContexts, aiActions);
+    : createWorkspaceCandidatesFromActions(aiContexts, aiActions, language);
   const seen = new Set<string>();
   return candidates
-    .map((candidate, index) => normalizeAiWindowWorkspaceCandidate(candidate, index, validTabIds))
+    .map((candidate, index) => normalizeAiWindowWorkspaceCandidate(candidate, index, validTabIds, language))
     .filter((candidate): candidate is AiWindowWorkspaceCandidate => {
       if (!candidate || seen.has(candidate.id)) return false;
       seen.add(candidate.id);
@@ -1565,7 +1627,8 @@ function mergeAiWindowWorkspaceCandidates(
 
 function createWorkspaceCandidatesFromActions(
   contexts: AiWindowPlan["contexts"],
-  actions: AiWindowAction[]
+  actions: AiWindowAction[],
+  language: AiWindowLanguage = "zh"
 ): AiWindowWorkspaceCandidate[] {
   const workspaceActions = actions.filter((action) =>
     action.kind === "workspace" &&
@@ -1588,33 +1651,34 @@ function createWorkspaceCandidatesFromActions(
     if (!contextWorkspaceActions.length) continue;
     candidates.push({
       id: `ws_${context.id}`,
-      title: context.title || contextWorkspaceActions[0]?.title || "当前任务工作台",
-      summary: context.description || "这些页面可作为同一任务继续处理。",
+      title: context.title || contextWorkspaceActions[0]?.title || uiText(language, "currentTaskWorkspace"),
+      summary: context.description || uiText(language, "workspaceSummary"),
       confidence: Math.max(...contextWorkspaceActions.map((action) => Number(action.confidence || 0.5))),
       tabIds: uniqueNumbers(contextWorkspaceActions.flatMap((action) => action.tabIds)),
       reviewTabIds: uniqueNumbers(contextActions.filter((action) => action.kind === "needs_review").flatMap((action) => action.tabIds)),
       excludedTabIds: uniqueNumbers(contextActions.filter((action) => action.kind === "later" || action.kind === "keep").flatMap((action) => action.tabIds)),
-      reason: contextWorkspaceActions[0]?.reason || "AI 判断这些页面属于同一任务语境。"
+      reason: contextWorkspaceActions[0]?.reason || uiText(language, "aiSameTaskReason")
     });
   }
 
   if (candidates.length) return candidates;
   return [{
     id: "ws_current_task",
-    title: workspaceActions[0]?.title || "当前任务工作台",
-    summary: "AI 建议把这些页面作为同一任务继续处理。",
+    title: workspaceActions[0]?.title || uiText(language, "currentTaskWorkspace"),
+    summary: uiText(language, "aiCurrentTaskSummary"),
     confidence: Math.max(...workspaceActions.map((action) => Number(action.confidence || 0.5))),
     tabIds: uniqueNumbers(workspaceActions.flatMap((action) => action.tabIds)),
     reviewTabIds: uniqueNumbers(actions.filter((action) => action.kind === "needs_review").flatMap((action) => action.tabIds)),
     excludedTabIds: uniqueNumbers(actions.filter((action) => action.kind === "later" || action.kind === "keep").flatMap((action) => action.tabIds)),
-    reason: workspaceActions[0]?.reason || "AI 判断这些页面属于当前任务。"
+    reason: workspaceActions[0]?.reason || uiText(language, "aiCurrentTaskReason")
   }];
 }
 
 function normalizeAiWindowWorkspaceCandidate(
   candidate: AiWindowWorkspaceCandidate,
   index: number,
-  validTabIds: Set<number>
+  validTabIds: Set<number>,
+  language: AiWindowLanguage = "zh"
 ): AiWindowWorkspaceCandidate | null {
   const tabIds = uniqueNumbers(candidate.tabIds).filter((tabId) => validTabIds.has(tabId));
   const reviewTabIds = uniqueNumbers(candidate.reviewTabIds).filter((tabId) => validTabIds.has(tabId) && !tabIds.includes(tabId));
@@ -1626,13 +1690,13 @@ function normalizeAiWindowWorkspaceCandidate(
   if (!tabIds.length && !reviewTabIds.length) return null;
   return {
     id: (candidate.id || `ws_${index + 1}`).trim().replace(/[^\w-]/g, "").slice(0, 40) || `ws_${index + 1}`,
-    title: (candidate.title || `任务工作台 ${index + 1}`).trim().slice(0, 36),
-    summary: (candidate.summary || "建议作为同一任务语境继续处理。").trim().slice(0, 140),
+    title: (candidate.title || uiText(language, "taskWorkspaceIndexed", { index: index + 1 })).trim().slice(0, 36),
+    summary: (candidate.summary || uiText(language, "workspaceCandidateFallback")).trim().slice(0, 140),
     confidence: Math.min(1, Math.max(0, Number(candidate.confidence || 0.5))),
     tabIds,
     reviewTabIds,
     excludedTabIds,
-    reason: (candidate.reason || "这些页面看起来属于同一个可继续处理的任务。").trim().slice(0, 180)
+    reason: (candidate.reason || uiText(language, "workspaceReasonFallback")).trim().slice(0, 180)
   };
 }
 

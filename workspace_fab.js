@@ -1,13 +1,218 @@
 (function () {
   const HOST_ID = "tab-inbox-workspace-tools";
   const POSITION_KEY = "tabInboxWorkspaceToolsPosition";
+  const LANGUAGE_KEY = "tabInboxLanguage";
   const DEFAULT_POSITION = { x: 1, y: 0.5 };
   const EDGE_PADDING = 8;
   const RIGHT_EDGE_PADDING = 0;
   const RIGHT_EDGE_SNAP_DISTANCE = 96;
   const RIGHT_DOCK_X = 1;
   const PRIMARY_BUTTON_CENTER_OFFSET = 131;
+  const MESSAGES = {
+    zh: {
+      organizeWindow: "整理窗口",
+      pageSummary: "总结该页面",
+      addToWorkspace: "加入工作台",
+      feedback: "反馈",
+      addFailed: "加入失败",
+      alreadyInWorkspace: "已在工作台",
+      addedToWorkspace: "已加入工作台",
+      organizingWindow: "正在整理窗口",
+      readingAiConfigFailed: "读取 AI 配置失败",
+      organizeFailed: "整理失败",
+      pageSummaryTitle: "页面总结",
+      noSummary: "没有抓取到明显摘要。",
+      loadingAiWindow: "AI 正在识别这个窗口里的同语境工作台和可确认页面。",
+      aiSetupRequiredTitle: "需要先配置 AI",
+      aiSetupRequiredDesc: "整理窗口依赖 AI 识别同一语境下的工作台。配置后，才能推荐一键进入工作台；未配置时只能查看本地重复页建议。",
+      localPreview: "查看本地重复页",
+      loadingLocalPreview: "正在查看本地重复页",
+      localPreviewFailed: "读取本地建议失败",
+      openAiSettings: "去配置 AI",
+      openSettingsFailed: "打开配置失败",
+      windowPlanTitle: "窗口整理",
+      generatedPlan: "已生成整理建议。",
+      pages: "{count} 个页面",
+      workspaceSuggestions: "{count} 个工作台建议",
+      details: "{count} 条详情",
+      closeDuplicatesOnly: "仅关闭重复",
+      addCurrentTask: "加入当前任务",
+      clearAll: "全部取消",
+      suggestion: "建议",
+      waitingReview: "等待确认。",
+      markedWrong: "已标记不准",
+      markWrong: "不准",
+      feedbackFailed: "反馈失败",
+      feedbackRecorded: "反馈已记录",
+      noExecutableSuggestions: "没有生成可执行建议。",
+      applySelected: "应用选中",
+      closeDuplicatesConfirm: "将关闭 {count} 个重复标签页，继续吗？",
+      applying: "应用中",
+      applyFailed: "应用失败",
+      appliedActions: "整理动作已应用",
+      currentTask: "当前任务",
+      laterEligible: "可稍后",
+      duplicates: "重复",
+      needsReview: "需确认",
+      appliedSummary: "已执行：工作台 {workspace}，稍后 {later}，关闭重复 {closeDuplicate}，失败 {failed}",
+      currentTaskWorkspace: "当前任务工作台",
+      workspaceCandidateFallback: "建议作为同一任务语境继续处理。",
+      entered: "已进入",
+      enterWorkspace: "进入工作台",
+      suggestedAdd: "建议加入 {count}",
+      reviewCount: "需确认 {count}",
+      excludedCount: "已排除 {count}",
+      candidateResult: "结果：加入 {workspace}，跳过 {skipped}，失败 {failed}",
+      pageDetails: "页面明细",
+      excludedPages: "已排除：{titles}",
+      candidateReasonFallback: "这些页面看起来属于同一个可继续处理的任务。",
+      chooseOnePage: "至少选择一个页面",
+      entering: "进入中",
+      enterWorkspaceFailed: "进入工作台失败",
+      enteredWorkspace: "已进入工作台",
+      reviewPrefix: "需确认 · ",
+      andMore: " 等 {count} 个",
+      workspace: "工作台",
+      later: "稍后",
+      closeDuplicate: "关闭重复",
+      keep: "保留",
+      group: "分组",
+      otherSuggestions: "其他建议",
+      pageCountSummary: "{count} 个页面：{titles}{rest}",
+      addToWorkspaceResolution: "加入工作台",
+      handleLater: "稍后处理",
+      resolvedPrefix: "已",
+      handleFailed: "处理失败",
+      reviewHandled: "已处理需确认项",
+      feedbackHint: "写下你对当前页面、分类或工作台动作的反馈。",
+      feedbackPlaceholder: "例如：这个页面不应该进入工作台...",
+      submit: "提交",
+      writeFeedbackFirst: "先写一点反馈",
+      submitting: "提交中",
+      feedbackSaveFailed: "反馈保存失败",
+      feedbackSaved: "反馈已保存",
+      close: "关闭"
+    },
+    en: {
+      organizeWindow: "Organize window",
+      pageSummary: "Summarize this page",
+      addToWorkspace: "Add to workspace",
+      feedback: "Feedback",
+      addFailed: "Failed to add",
+      alreadyInWorkspace: "Already in workspace",
+      addedToWorkspace: "Added to workspace",
+      organizingWindow: "Organizing window",
+      readingAiConfigFailed: "Failed to read AI settings",
+      organizeFailed: "Organization failed",
+      pageSummaryTitle: "Page summary",
+      noSummary: "No clear summary was found.",
+      loadingAiWindow: "AI is finding same-context workspace candidates and review items in this window.",
+      aiSetupRequiredTitle: "Configure AI first",
+      aiSetupRequiredDesc: "Window organization uses AI to identify same-context workspaces. After setup, it can recommend a one-click workspace; without setup, you can still review local duplicate suggestions.",
+      localPreview: "View local duplicates",
+      loadingLocalPreview: "Reading local duplicates",
+      localPreviewFailed: "Failed to read local suggestions",
+      openAiSettings: "Configure AI",
+      openSettingsFailed: "Failed to open settings",
+      windowPlanTitle: "Window organization",
+      generatedPlan: "Organization suggestions are ready.",
+      pages: "{count} pages",
+      workspaceSuggestions: "{count} workspace suggestions",
+      details: "{count} details",
+      closeDuplicatesOnly: "Close duplicates only",
+      addCurrentTask: "Add current task",
+      clearAll: "Clear all",
+      suggestion: "Suggestion",
+      waitingReview: "Waiting for review.",
+      markedWrong: "Marked wrong",
+      markWrong: "Wrong",
+      feedbackFailed: "Feedback failed",
+      feedbackRecorded: "Feedback recorded",
+      noExecutableSuggestions: "No executable suggestions were generated.",
+      applySelected: "Apply selected",
+      closeDuplicatesConfirm: "Close {count} duplicate tabs?",
+      applying: "Applying",
+      applyFailed: "Apply failed",
+      appliedActions: "Organization actions applied",
+      currentTask: "Current task",
+      laterEligible: "Later",
+      duplicates: "Duplicates",
+      needsReview: "Review",
+      appliedSummary: "Applied: workspace {workspace}, later {later}, closed duplicates {closeDuplicate}, failed {failed}",
+      currentTaskWorkspace: "Current task workspace",
+      workspaceCandidateFallback: "Recommended as one task context to continue.",
+      entered: "Entered",
+      enterWorkspace: "Enter workspace",
+      suggestedAdd: "Suggested {count}",
+      reviewCount: "Review {count}",
+      excludedCount: "Excluded {count}",
+      candidateResult: "Result: added {workspace}, skipped {skipped}, failed {failed}",
+      pageDetails: "Page details",
+      excludedPages: "Excluded: {titles}",
+      candidateReasonFallback: "These pages look like one task you can continue.",
+      chooseOnePage: "Choose at least one page",
+      entering: "Entering",
+      enterWorkspaceFailed: "Failed to enter workspace",
+      enteredWorkspace: "Entered workspace",
+      reviewPrefix: "Review · ",
+      andMore: " and {count} more",
+      workspace: "Workspace",
+      later: "Later",
+      closeDuplicate: "Close duplicates",
+      keep: "Keep",
+      group: "Group",
+      otherSuggestions: "Other suggestions",
+      pageCountSummary: "{count} pages: {titles}{rest}",
+      addToWorkspaceResolution: "Add to workspace",
+      handleLater: "Handle later",
+      resolvedPrefix: "Done: ",
+      handleFailed: "Failed to handle",
+      reviewHandled: "Review item handled",
+      feedbackHint: "Write feedback about the current page, category, or workspace action.",
+      feedbackPlaceholder: "Example: this page should not enter the workspace...",
+      submit: "Submit",
+      writeFeedbackFirst: "Write a little feedback first",
+      submitting: "Submitting",
+      feedbackSaveFailed: "Failed to save feedback",
+      feedbackSaved: "Feedback saved",
+      close: "Close"
+    }
+  };
+  let currentLanguage = getInitialLanguage();
   if (!/^https?:$/i.test(window.location.protocol)) return;
+
+  function getInitialLanguage() {
+    return navigator.language?.toLowerCase().startsWith("zh") ? "zh" : "en";
+  }
+
+  function t(key, values = {}) {
+    const template = MESSAGES[currentLanguage]?.[key] || MESSAGES.zh[key] || key;
+    return template.replace(/\{(\w+)\}/g, (_, name) => values[name] ?? "");
+  }
+
+  function formatError(error, fallbackKey) {
+    const message = error instanceof Error ? error.message : String(error || "");
+    if (currentLanguage === "en" && /[\u3400-\u9fff]/.test(message)) return t(fallbackKey);
+    return message || t(fallbackKey);
+  }
+
+  function syncLanguagePreference(onChange) {
+    const storage = globalThis.chrome?.storage?.local;
+    if (!storage?.get) return;
+    try {
+      Promise.resolve(storage.get(LANGUAGE_KEY)).then((result) => {
+        const next = result?.[LANGUAGE_KEY];
+        if (next !== "zh" && next !== "en") return;
+        if (next === currentLanguage) return;
+        currentLanguage = next;
+        onChange?.();
+      }).catch(() => {
+        // Keep the navigator-based default when extension storage is unavailable.
+      });
+    } catch {
+      // Keep the navigator-based default when extension storage is unavailable.
+    }
+  }
 
   function boot() {
     if (document.getElementById(HOST_ID)) return;
@@ -720,10 +925,10 @@
 
     const rail = document.createElement("div");
     rail.className = "rail";
-    const organizeButton = makeButton("secondary organize-action", "organizeWindow", "整理窗口");
-    const summaryButton = makeButton("secondary summary-action", "pageSummary", "总结该页面");
-    const workspaceButton = makeButton("primary", "logoTray", "加入工作台");
-    const feedbackButton = makeButton("secondary feedback-action", "feedback", "反馈");
+    const organizeButton = makeButton("secondary organize-action", "organizeWindow", t("organizeWindow"));
+    const summaryButton = makeButton("secondary summary-action", "pageSummary", t("pageSummary"));
+    const workspaceButton = makeButton("primary", "logoTray", t("addToWorkspace"));
+    const feedbackButton = makeButton("secondary feedback-action", "feedback", t("feedback"));
     workspaceButton.appendChild(makeBadge());
     rail.append(organizeButton, summaryButton, workspaceButton, feedbackButton);
 
@@ -739,6 +944,26 @@
     let toastTimer = 0;
     let railPosition = readPosition();
     applyRailPosition();
+    syncLanguagePreference(updateStaticLabels);
+    globalThis.chrome?.storage?.onChanged?.addListener?.((changes, areaName) => {
+      if (areaName !== "local" || !changes[LANGUAGE_KEY]?.newValue) return;
+      const next = changes[LANGUAGE_KEY].newValue;
+      if (next !== "zh" && next !== "en") return;
+      currentLanguage = next;
+      updateStaticLabels();
+    });
+
+    function updateStaticLabels() {
+      setButtonLabel(organizeButton, t("organizeWindow"));
+      setButtonLabel(summaryButton, t("pageSummary"));
+      setButtonLabel(workspaceButton, t("addToWorkspace"));
+      setButtonLabel(feedbackButton, t("feedback"));
+    }
+
+    function setButtonLabel(button, label) {
+      button.title = label;
+      button.setAttribute("aria-label", label);
+    }
 
     workspaceButton.addEventListener("mouseenter", () => rail.classList.add("is-expanded"));
     workspaceButton.addEventListener("focus", () => rail.classList.add("is-expanded"));
@@ -790,12 +1015,12 @@
       workspaceButton.classList.add("is-busy");
       try {
         const response = await chrome.runtime.sendMessage({ type: "workspace:add-current-tab" });
-        if (!response?.ok) throw new Error(response?.error || "加入失败");
+        if (!response?.ok) throw new Error(response?.error || t("addFailed"));
         workspaceButton.classList.add("is-success");
-        showToast(response.data?.alreadyExists ? "已在工作台" : "已加入工作台", "success");
+        showToast(response.data?.alreadyExists ? t("alreadyInWorkspace") : t("addedToWorkspace"), "success");
         setTimeout(() => workspaceButton.classList.remove("is-success"), 1000);
       } catch (error) {
-        showToast(error instanceof Error ? error.message : "加入失败", "error");
+        showToast(formatError(error, "addFailed"), "error");
       } finally {
         workspaceButton.classList.remove("is-busy");
       }
@@ -804,19 +1029,19 @@
     organizeButton.addEventListener("click", async () => {
       if (organizeButton.classList.contains("is-busy")) return;
       organizeButton.classList.add("is-busy");
-      showLoadingPanel("正在整理窗口");
+      showLoadingPanel(t("organizingWindow"));
       try {
         const settingsResponse = await chrome.runtime.sendMessage({ type: "ai-settings:get" });
-        if (!settingsResponse?.ok) throw new Error(settingsResponse?.error || "读取 AI 配置失败");
+        if (!settingsResponse?.ok) throw new Error(settingsResponse?.error || t("readingAiConfigFailed"));
         if (!isAiSettingsReady(settingsResponse.data)) {
           showAiSetupRequiredPanel();
           return;
         }
-        const response = await chrome.runtime.sendMessage({ type: "ai-window:analyze-current" });
-        if (!response?.ok) throw new Error(response?.error || "整理失败");
+        const response = await chrome.runtime.sendMessage({ type: "ai-window:analyze-current", language: currentLanguage });
+        if (!response?.ok) throw new Error(response?.error || t("organizeFailed"));
         showAiWindowPlan(response.data);
       } catch (error) {
-        showToast(error instanceof Error ? error.message : "整理失败", "error");
+        showToast(formatError(error, "organizeFailed"), "error");
         closePanel();
       } finally {
         organizeButton.classList.remove("is-busy");
@@ -826,9 +1051,9 @@
     summaryButton.addEventListener("click", () => {
       const summary = summarizePage();
       const title = document.createElement("h3");
-      title.textContent = "页面总结";
+      title.textContent = t("pageSummaryTitle");
       const desc = document.createElement("p");
-      desc.textContent = summary.description || summary.title || "没有抓取到明显摘要。";
+      desc.textContent = summary.description || summary.title || t("noSummary");
       const list = document.createElement("ul");
       summary.points.forEach((point) => {
         const item = document.createElement("li");
@@ -843,7 +1068,7 @@
       const title = document.createElement("h3");
       title.textContent = message;
       const desc = document.createElement("p");
-      desc.textContent = "AI 正在识别这个窗口里的同语境工作台和可确认页面。";
+      desc.textContent = t("loadingAiWindow");
       showPanel([title, desc]);
     }
 
@@ -859,42 +1084,42 @@
 
     function showAiSetupRequiredPanel() {
       const title = document.createElement("h3");
-      title.textContent = "需要先配置 AI";
+      title.textContent = t("aiSetupRequiredTitle");
       const desc = document.createElement("p");
-      desc.textContent = "整理窗口依赖 AI 识别同一语境下的工作台。配置后，才能推荐一键进入工作台；未配置时只能查看本地重复页建议。";
+      desc.textContent = t("aiSetupRequiredDesc");
       const actions = makePanelActions(closePanel);
 
       const localPreview = document.createElement("button");
       localPreview.type = "button";
       localPreview.className = "is-secondary";
-      localPreview.textContent = "查看本地重复页";
+      localPreview.textContent = t("localPreview");
       localPreview.addEventListener("click", async () => {
         if (localPreview.disabled) return;
         localPreview.disabled = true;
-        showLoadingPanel("正在查看本地重复页");
+        showLoadingPanel(t("loadingLocalPreview"));
         try {
-          const response = await chrome.runtime.sendMessage({ type: "ai-window:local-preview" });
-          if (!response?.ok) throw new Error(response?.error || "读取本地建议失败");
+          const response = await chrome.runtime.sendMessage({ type: "ai-window:local-preview", language: currentLanguage });
+          if (!response?.ok) throw new Error(response?.error || t("localPreviewFailed"));
           showAiWindowPlan(response.data);
         } catch (error) {
-          showToast(error instanceof Error ? error.message : "读取本地建议失败", "error");
+          showToast(formatError(error, "localPreviewFailed"), "error");
           showAiSetupRequiredPanel();
         }
       });
 
       const openSettings = document.createElement("button");
       openSettings.type = "button";
-      openSettings.textContent = "去配置 AI";
+      openSettings.textContent = t("openAiSettings");
       openSettings.addEventListener("click", async () => {
         if (openSettings.disabled) return;
         openSettings.disabled = true;
         try {
           const response = await chrome.runtime.sendMessage({ type: "dashboard:open" });
-          if (!response?.ok) throw new Error(response?.error || "打开配置失败");
+          if (!response?.ok) throw new Error(response?.error || t("openSettingsFailed"));
           closePanel();
         } catch (error) {
           openSettings.disabled = false;
-          showToast(error instanceof Error ? error.message : "打开配置失败", "error");
+          showToast(formatError(error, "openSettingsFailed"), "error");
         }
       });
 
@@ -907,12 +1132,16 @@
       const actionsData = Array.isArray(plan?.actions) ? plan.actions : [];
       const workspaceCandidates = Array.isArray(plan?.workspaceCandidates) ? plan.workspaceCandidates : [];
       const title = document.createElement("h3");
-      title.textContent = "窗口整理";
+      title.textContent = t("windowPlanTitle");
       const desc = document.createElement("p");
-      desc.textContent = plan?.summary || "已生成整理建议。";
+      desc.textContent = plan?.summary || t("generatedPlan");
       const meta = document.createElement("div");
       meta.className = "plan-meta";
-      meta.append(makePill(`${tabs.length} 个页面`), makePill(`${workspaceCandidates.length} 个工作台建议`), makePill(`${actionsData.length} 条详情`));
+      meta.append(
+        makePill(t("pages", { count: tabs.length })),
+        makePill(t("workspaceSuggestions", { count: workspaceCandidates.length })),
+        makePill(t("details", { count: actionsData.length }))
+      );
       if (Number(plan?.totalTokens) > 0) meta.appendChild(makePill(`${plan.totalTokens} tokens`));
       const stats = makePlanStats(actionsData);
       const appliedSummary = makeAppliedSummary(plan?.appliedSummary);
@@ -920,9 +1149,9 @@
 
       const quickActions = document.createElement("div");
       quickActions.className = "plan-quick-actions";
-      const duplicateOnly = makeQuickButton("仅关闭重复");
-      const workspaceOnly = makeQuickButton("加入当前任务");
-      const clearAll = makeQuickButton("全部取消");
+      const duplicateOnly = makeQuickButton(t("closeDuplicatesOnly"));
+      const workspaceOnly = makeQuickButton(t("addCurrentTask"));
+      const clearAll = makeQuickButton(t("clearAll"));
       quickActions.append(duplicateOnly, workspaceOnly, clearAll);
 
       const list = document.createElement("div");
@@ -962,7 +1191,7 @@
           const head = document.createElement("div");
           head.className = "plan-action-title";
           const actionTitle = document.createElement("span");
-          actionTitle.textContent = `${actionKindLabel(action.kind)} · ${action.title || "建议"}`;
+          actionTitle.textContent = `${actionKindLabel(action.kind)} · ${action.title || t("suggestion")}`;
           const confidence = document.createElement("span");
           confidence.className = "plan-confidence";
           confidence.textContent = `${Math.round(Number(action.confidence || 0) * 100)}%`;
@@ -970,7 +1199,7 @@
 
           const reason = document.createElement("div");
           reason.className = "plan-reason";
-          reason.textContent = action.reason || "等待确认。";
+          reason.textContent = action.reason || t("waitingReview");
           const tabLine = document.createElement("div");
           tabLine.className = "plan-tabs";
           tabLine.textContent = actionTabSummary(action, tabs);
@@ -988,7 +1217,7 @@
           feedback.type = "button";
           feedback.className = "plan-feedback-btn";
           if (action.feedbackStatus) feedback.classList.add("is-marked");
-          feedback.textContent = action.feedbackStatus ? "已标记不准" : "不准";
+          feedback.textContent = action.feedbackStatus ? t("markedWrong") : t("markWrong");
           feedback.disabled = Boolean(action.feedbackStatus);
           feedback.addEventListener("click", async () => {
             if (feedback.disabled) return;
@@ -998,14 +1227,14 @@
                 type: "ai-window:feedback",
                 planId: plan.id,
                 actionId: action.id,
-                feedback: { message: "胶囊浮层标记不准" }
+                feedback: { message: t("markWrong") }
               });
-              if (!response?.ok) throw new Error(response?.error || "反馈失败");
-              showToast("反馈已记录", "success");
+              if (!response?.ok) throw new Error(response?.error || t("feedbackFailed"));
+              showToast(t("feedbackRecorded"), "success");
               showAiWindowPlan(response.data);
             } catch (error) {
               feedback.disabled = false;
-              showToast(error instanceof Error ? error.message : "反馈失败", "error");
+              showToast(formatError(error, "feedbackFailed"), "error");
             }
           });
           body.appendChild(feedback);
@@ -1016,14 +1245,14 @@
       });
       if (!actionsData.length) {
         const empty = document.createElement("p");
-        empty.textContent = "没有生成可执行建议。";
+        empty.textContent = t("noExecutableSuggestions");
         list.appendChild(empty);
       }
 
       const actions = makePanelActions(closePanel);
       const apply = document.createElement("button");
       apply.type = "button";
-      apply.textContent = "应用选中";
+      apply.textContent = t("applySelected");
       apply.disabled = !list.querySelector('input[type="checkbox"]:checked');
       duplicateOnly.addEventListener("click", () => selectPlanActions(list, (kind) => kind === "close_duplicate", apply));
       workspaceOnly.addEventListener("click", () => selectPlanActions(list, (kind) => kind === "workspace", apply));
@@ -1040,22 +1269,22 @@
         const closeCount = selected
           .filter((action) => action.kind === "close_duplicate")
           .reduce((sum, action) => sum + (Array.isArray(action.tabIds) ? action.tabIds.length : 0), 0);
-        if (closeCount && !confirm(`将关闭 ${closeCount} 个重复标签页，继续吗？`)) return;
+        if (closeCount && !confirm(t("closeDuplicatesConfirm", { count: closeCount }))) return;
         apply.disabled = true;
-        apply.textContent = "应用中";
+        apply.textContent = t("applying");
         try {
           const response = await chrome.runtime.sendMessage({
             type: "ai-window:apply",
             planId: plan.id,
             actionIds
           });
-          if (!response?.ok) throw new Error(response?.error || "应用失败");
-          showToast("整理动作已应用", "success");
+          if (!response?.ok) throw new Error(response?.error || t("applyFailed"));
+          showToast(t("appliedActions"), "success");
           showAiWindowPlan(response.data);
         } catch (error) {
-          showToast(error instanceof Error ? error.message : "应用失败", "error");
+          showToast(formatError(error, "applyFailed"), "error");
           apply.disabled = false;
-          apply.textContent = "应用选中";
+          apply.textContent = t("applySelected");
         }
       });
       actions.appendChild(apply);
@@ -1078,10 +1307,10 @@
       const stats = document.createElement("div");
       stats.className = "plan-stats";
       stats.append(
-        makeStat("当前任务", countActionTabs(actionsData, "workspace")),
-        makeStat("可稍后", countActionTabs(actionsData, "later")),
-        makeStat("重复", countActionTabs(actionsData, "close_duplicate")),
-        makeStat("需确认", countActionTabs(actionsData, "needs_review"))
+        makeStat(t("currentTask"), countActionTabs(actionsData, "workspace")),
+        makeStat(t("laterEligible"), countActionTabs(actionsData, "later")),
+        makeStat(t("duplicates"), countActionTabs(actionsData, "close_duplicate")),
+        makeStat(t("needsReview"), countActionTabs(actionsData, "needs_review"))
       );
       return stats;
     }
@@ -1100,7 +1329,12 @@
     function makeAppliedSummary(summary) {
       if (!summary) return null;
       const node = document.createElement("p");
-      node.textContent = `已执行：工作台 ${summary.workspace || 0}，稍后 ${summary.later || 0}，关闭重复 ${summary.closeDuplicate || 0}，失败 ${summary.failed || 0}`;
+      node.textContent = t("appliedSummary", {
+        workspace: summary.workspace || 0,
+        later: summary.later || 0,
+        closeDuplicate: summary.closeDuplicate || 0,
+        failed: summary.failed || 0
+      });
       return node;
     }
 
@@ -1116,31 +1350,35 @@
         const titleWrap = document.createElement("div");
         const cardTitle = document.createElement("div");
         cardTitle.className = "workspace-candidate-title";
-        cardTitle.textContent = candidate.title || "当前任务工作台";
+        cardTitle.textContent = candidate.title || t("currentTaskWorkspace");
         const summary = document.createElement("div");
         summary.className = "workspace-candidate-summary";
-        summary.textContent = candidate.summary || "建议作为同一任务语境继续处理。";
+        summary.textContent = candidate.summary || t("workspaceCandidateFallback");
         titleWrap.append(cardTitle, summary);
         const enter = document.createElement("button");
         enter.type = "button";
         enter.className = "workspace-candidate-enter";
-        enter.textContent = candidate.appliedAt ? "已进入" : "进入工作台";
+        enter.textContent = candidate.appliedAt ? t("entered") : t("enterWorkspace");
         enter.disabled = Boolean(candidate.appliedAt);
         head.append(titleWrap, enter);
 
         const counts = document.createElement("div");
         counts.className = "workspace-candidate-counts";
         counts.append(
-          makeCandidateCount(`建议加入 ${safeArray(candidate.tabIds).length}`),
-          makeCandidateCount(`需确认 ${safeArray(candidate.reviewTabIds).length}`),
-          makeCandidateCount(`已排除 ${safeArray(candidate.excludedTabIds).length}`),
+          makeCandidateCount(t("suggestedAdd", { count: safeArray(candidate.tabIds).length })),
+          makeCandidateCount(t("reviewCount", { count: safeArray(candidate.reviewTabIds).length })),
+          makeCandidateCount(t("excludedCount", { count: safeArray(candidate.excludedTabIds).length })),
           makeCandidateCount(`${Math.round(Number(candidate.confidence || 0) * 100)}%`)
         );
 
         const result = document.createElement("div");
         result.className = "workspace-candidate-result";
         if (candidate.appliedSummary) {
-          result.textContent = `结果：加入 ${candidate.appliedSummary.workspace || 0}，跳过 ${candidate.appliedSummary.skipped || 0}，失败 ${candidate.appliedSummary.failed || 0}`;
+          result.textContent = t("candidateResult", {
+            workspace: candidate.appliedSummary.workspace || 0,
+            skipped: candidate.appliedSummary.skipped || 0,
+            failed: candidate.appliedSummary.failed || 0
+          });
         } else if (candidate.error) {
           result.classList.add("plan-error");
           result.textContent = candidate.error;
@@ -1148,7 +1386,7 @@
 
         const details = document.createElement("details");
         const detailTitle = document.createElement("summary");
-        detailTitle.textContent = "页面明细";
+        detailTitle.textContent = t("pageDetails");
         const pages = document.createElement("div");
         pages.className = "workspace-candidate-pages";
         const tabMap = new Map(tabs.map((tab) => [tab.tabId, tab]));
@@ -1157,12 +1395,12 @@
         if (safeArray(candidate.excludedTabIds).length) {
           const excluded = document.createElement("div");
           excluded.className = "workspace-candidate-reason";
-          excluded.textContent = `已排除：${candidateTabTitles(candidate.excludedTabIds, tabs)}`;
+          excluded.textContent = t("excludedPages", { titles: candidateTabTitles(candidate.excludedTabIds, tabs) });
           pages.appendChild(excluded);
         }
         const reason = document.createElement("div");
         reason.className = "workspace-candidate-reason";
-        reason.textContent = candidate.reason || "这些页面看起来属于同一个可继续处理的任务。";
+        reason.textContent = candidate.reason || t("candidateReasonFallback");
         pages.appendChild(reason);
         details.append(detailTitle, pages);
 
@@ -1172,11 +1410,11 @@
             .map((input) => Number(input.value))
             .filter((tabId) => Number.isInteger(tabId));
           if (!selectedTabIds.length) {
-            showToast("至少选择一个页面", "error");
+            showToast(t("chooseOnePage"), "error");
             return;
           }
           enter.disabled = true;
-          enter.textContent = "进入中";
+          enter.textContent = t("entering");
           try {
             const response = await chrome.runtime.sendMessage({
               type: "ai-window:enter-workspace",
@@ -1184,13 +1422,13 @@
               candidateId: candidate.id,
               selectedTabIds
             });
-            if (!response?.ok) throw new Error(response?.error || "进入工作台失败");
-            showToast("已进入工作台", "success");
+            if (!response?.ok) throw new Error(response?.error || t("enterWorkspaceFailed"));
+            showToast(t("enteredWorkspace"), "success");
             showAiWindowPlan(response.data);
           } catch (error) {
             enter.disabled = false;
-            enter.textContent = "进入工作台";
-            showToast(error instanceof Error ? error.message : "进入工作台失败", "error");
+            enter.textContent = t("enterWorkspace");
+            showToast(formatError(error, "enterWorkspaceFailed"), "error");
           }
         });
 
@@ -1220,7 +1458,7 @@
         checkbox.checked = checked;
         checkbox.disabled = Boolean(disabled);
         const text = document.createElement("span");
-        text.textContent = `${mode === "review" ? "需确认 · " : ""}${tab.title || tab.domain || tab.url}`;
+        text.textContent = `${mode === "review" ? t("reviewPrefix") : ""}${tab.title || tab.domain || tab.url}`;
         label.append(checkbox, text);
         parent.appendChild(label);
       });
@@ -1233,7 +1471,7 @@
         .map((tab) => tab.title || tab.domain || tab.url)
         .slice(0, 3);
       const rest = Math.max(0, ids.size - titles.length);
-      return `${titles.join(" / ")}${rest ? ` 等 ${rest} 个` : ""}`;
+      return `${titles.join(" / ")}${rest ? t("andMore", { count: rest }) : ""}`;
     }
 
     function safeArray(value) {
@@ -1257,12 +1495,12 @@
       const wrap = document.createElement("div");
       wrap.className = "plan-resolution-actions";
       const options = [
-        ["workspace", "加入工作台"],
-        ["later", "稍后处理"],
-        ["keep", "保留"]
+        ["workspace", t("addToWorkspaceResolution")],
+        ["later", t("handleLater")],
+        ["keep", t("keep")]
       ];
       options.forEach(([resolution, label]) => {
-        const button = makeQuickButton(action.resolvedAs === resolution ? `已${label}` : label);
+        const button = makeQuickButton(action.resolvedAs === resolution ? `${t("resolvedPrefix")}${label}` : label);
         button.disabled = Boolean(action.appliedAt || action.resolvedAs);
         button.addEventListener("click", async () => {
           if (button.disabled) return;
@@ -1274,12 +1512,12 @@
               actionId: action.id,
               resolution
             });
-            if (!response?.ok) throw new Error(response?.error || "处理失败");
-            showToast("已处理需确认项", "success");
+            if (!response?.ok) throw new Error(response?.error || t("handleFailed"));
+            showToast(t("reviewHandled"), "success");
             showAiWindowPlan(response.data);
           } catch (error) {
             button.disabled = false;
-            showToast(error instanceof Error ? error.message : "处理失败", "error");
+            showToast(formatError(error, "handleFailed"), "error");
           }
         });
         wrap.appendChild(button);
@@ -1297,7 +1535,7 @@
     function groupPlanActions(plan, actionsData) {
       const contexts = Array.isArray(plan?.contexts) ? plan.contexts : [];
       const byContext = new Map(contexts.map((context) => [context.id, { ...context, actions: [] }]));
-      const fallback = { id: "ctx_other", title: "其他建议", description: "", actions: [] };
+      const fallback = { id: "ctx_other", title: t("otherSuggestions"), description: "", actions: [] };
       actionsData.forEach((action) => {
         const target = byContext.get(action.contextId) || fallback;
         target.actions.push(action);
@@ -1307,14 +1545,14 @@
 
     function actionKindLabel(kind) {
       const labels = {
-        workspace: "工作台",
-        later: "稍后",
-        close_duplicate: "关闭重复",
-        keep: "保留",
-        group: "分组",
-        needs_review: "需确认"
+        workspace: t("workspace"),
+        later: t("later"),
+        close_duplicate: t("closeDuplicate"),
+        keep: t("keep"),
+        group: t("group"),
+        needs_review: t("needsReview")
       };
-      return labels[kind] || "建议";
+      return labels[kind] || t("suggestion");
     }
 
     function actionTabSummary(action, tabs) {
@@ -1324,31 +1562,35 @@
         .map((tab) => tab.title || tab.domain || tab.url)
         .slice(0, 3);
       const rest = Math.max(0, ids.size - titles.length);
-      return `${ids.size} 个页面：${titles.join(" / ")}${rest ? ` 等 ${rest} 个` : ""}`;
+      return t("pageCountSummary", {
+        count: ids.size,
+        titles: titles.join(" / "),
+        rest: rest ? t("andMore", { count: rest }) : ""
+      });
     }
 
-    feedbackButton.addEventListener("click", () => showFeedbackPanel("反馈"));
+    feedbackButton.addEventListener("click", () => showFeedbackPanel(t("feedback")));
 
     function showFeedbackPanel(titleText) {
       const title = document.createElement("h3");
       title.textContent = titleText;
       const hint = document.createElement("p");
-      hint.textContent = "写下你对当前页面、分类或工作台动作的反馈。";
+      hint.textContent = t("feedbackHint");
       const textarea = document.createElement("textarea");
-      textarea.placeholder = "例如：这个页面不应该进入工作台...";
+      textarea.placeholder = t("feedbackPlaceholder");
       const actions = makePanelActions(closePanel);
       const submit = document.createElement("button");
       submit.type = "button";
-      submit.textContent = "提交";
+      submit.textContent = t("submit");
       submit.addEventListener("click", async () => {
         const message = textarea.value.trim();
         if (!message) {
-          showToast("先写一点反馈", "error");
+          showToast(t("writeFeedbackFirst"), "error");
           return;
         }
         if (submit.disabled) return;
         submit.disabled = true;
-        submit.textContent = "提交中";
+        submit.textContent = t("submitting");
         try {
           const response = await chrome.runtime.sendMessage({
             type: "feedback:quick",
@@ -1360,14 +1602,14 @@
               createdAt: Date.now()
             }
           });
-          if (!response?.ok) throw new Error(response?.error || "反馈保存失败");
+          if (!response?.ok) throw new Error(response?.error || t("feedbackSaveFailed"));
           closePanel();
-          showToast("反馈已保存", "success");
+          showToast(t("feedbackSaved"), "success");
         } catch (error) {
-          showToast(error instanceof Error ? error.message : "反馈保存失败", "error");
+          showToast(formatError(error, "feedbackSaveFailed"), "error");
         } finally {
           submit.disabled = false;
-          submit.textContent = "提交";
+          submit.textContent = t("submit");
         }
       });
       actions.appendChild(submit);
@@ -1620,7 +1862,7 @@
     actions.className = "panel-actions";
     const close = document.createElement("button");
     close.type = "button";
-    close.textContent = "关闭";
+    close.textContent = t("close");
     close.addEventListener("click", onClose);
     actions.appendChild(close);
     return actions;

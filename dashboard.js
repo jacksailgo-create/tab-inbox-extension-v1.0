@@ -163,6 +163,12 @@ const MESSAGES = {
     testConnection: "测试连接",
     aiSuggestions: "AI 建议",
     aiHistory: "AI 分类记录",
+    aiWindowHistory: "窗口整理历史",
+    aiWindowPlanCount: "{count} 个方案",
+    noAiWindowHistory: "还没有窗口整理历史",
+    noWorkspaceCandidates: "暂无工作台候选",
+    localSignals: "本地信号",
+    failed: "失败",
     memoryModule: "记忆模块",
     rulesAndLogs: "规则与记录",
     settings: "设置",
@@ -223,6 +229,8 @@ const MESSAGES = {
     hideCategoryTabs: "收起标签",
     noCategoryTabs: "这个分类下暂无打开的标签。",
     deleteMemory: "删除记忆",
+    hitCount: "命中 {count} 次",
+    mergedCount: "合并 {count} 条",
     unnamedGroup: "未命名分组",
     uncategorized: "未分类",
     sourceUnknown: "未知",
@@ -279,6 +287,8 @@ const MESSAGES = {
     deleteRuleFailed: "删除规则失败",
     ruleDeleted: "规则已删除",
     aiSuggestionFailed: "处理 AI 建议失败",
+    acceptAiSuggestion: "接受并应用",
+    ignoreAiSuggestion: "忽略",
     acceptedAiSuggestion: "已接受并应用 AI 建议",
     ignoredAiSuggestion: "已忽略 AI 建议",
     deleteMemoryFailed: "删除记忆失败",
@@ -364,6 +374,12 @@ const MESSAGES = {
     testConnection: "Test connection",
     aiSuggestions: "AI Suggestions",
     aiHistory: "AI History",
+    aiWindowHistory: "Window Organization History",
+    aiWindowPlanCount: "{count} plans",
+    noAiWindowHistory: "No window organization history yet",
+    noWorkspaceCandidates: "No workspace candidates",
+    localSignals: "Local signals",
+    failed: "Failed",
     memoryModule: "Memory Module",
     rulesAndLogs: "Rules & Logs",
     settings: "Settings",
@@ -424,6 +440,8 @@ const MESSAGES = {
     hideCategoryTabs: "Hide tabs",
     noCategoryTabs: "No open tabs in this category.",
     deleteMemory: "Delete memory",
+    hitCount: "{count} hits",
+    mergedCount: "merged {count}",
     unnamedGroup: "Unnamed group",
     uncategorized: "Uncategorized",
     sourceUnknown: "Unknown",
@@ -480,6 +498,8 @@ const MESSAGES = {
     deleteRuleFailed: "Failed to delete rule",
     ruleDeleted: "Rule deleted",
     aiSuggestionFailed: "Failed to handle AI suggestion",
+    acceptAiSuggestion: "Accept & apply",
+    ignoreAiSuggestion: "Ignore",
     acceptedAiSuggestion: "Accepted and applied AI suggestion",
     ignoredAiSuggestion: "Ignored AI suggestion",
     deleteMemoryFailed: "Failed to delete memory",
@@ -634,6 +654,7 @@ function applyStaticTranslations() {
     els.languageToggleBtn.textContent = currentLanguage === "zh" ? "EN" : "中";
     els.languageToggleBtn.setAttribute("aria-label", currentLanguage === "zh" ? "Switch to English" : "切换到中文");
   }
+  globalThis.chrome?.storage?.local?.set?.({ [LANGUAGE_KEY]: currentLanguage });
 }
 
 function isSystemUrl(url = "") {
@@ -1292,12 +1313,10 @@ function renderAiWindowPlans() {
   const plans = aiWindowPlans
     .slice()
     .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
-  els.aiWindowPlanCount.textContent = currentLanguage === "zh"
-    ? `${plans.length} 个方案`
-    : `${plans.length} plans`;
+  els.aiWindowPlanCount.textContent = t("aiWindowPlanCount", { count: plans.length });
   els.aiWindowPlanList.innerHTML = plans.length
     ? plans.slice(0, 30).map(renderAiWindowPlanItem).join("")
-    : `<div class="empty">${currentLanguage === "zh" ? "还没有窗口整理历史" : "No window organization history yet"}</div>`;
+    : `<div class="empty">${t("noAiWindowHistory")}</div>`;
 }
 
 function renderAiWindowPlanItem(plan) {
@@ -1309,12 +1328,12 @@ function renderAiWindowPlanItem(plan) {
   const status = aiWindowPlanStatusLabel(plan.status);
   const candidateText = candidates.length
     ? candidates.slice(0, 2).map((candidate) => candidate.title || "Workspace").join(" / ")
-    : (currentLanguage === "zh" ? "暂无工作台候选" : "No workspace candidates");
+    : t("noWorkspaceCandidates");
   const actionText = [
-    `${currentLanguage === "zh" ? "工作台" : "Workspace"} ${summary.workspace || 0}`,
-    `${currentLanguage === "zh" ? "稍后" : "Later"} ${summary.later || 0}`,
-    `${currentLanguage === "zh" ? "重复" : "Dupes"} ${summary.closeDuplicate || 0}`,
-    `${currentLanguage === "zh" ? "失败" : "Failed"} ${summary.failed || 0}`
+    `${t("workspace")} ${summary.workspace || 0}`,
+    `${t("later")} ${summary.later || 0}`,
+    `${t("duplicates")} ${summary.closeDuplicate || 0}`,
+    `${t("failed")} ${summary.failed || 0}`
   ].join(" · ");
   return `
     <article class="ai-window-plan-item">
@@ -1328,7 +1347,7 @@ function renderAiWindowPlanItem(plan) {
       <div class="ai-history-target">${escapeHtml(candidateText)}</div>
       <div class="ai-history-target">${escapeHtml(actionText)}</div>
       <div class="ai-history-reason">
-        ${escapeHtml(currentLanguage === "zh" ? "本地信号" : "Local signals")}:
+        ${escapeHtml(t("localSignals"))}:
         ${escapeHtml(String((signals.duplicateTabIds || []).length))} duplicate,
         ${escapeHtml(String((signals.protectedTabIds || []).length))} protected,
         ${escapeHtml(String((signals.alreadyWorkspaceTabIds || []).length))} workspace,
@@ -1663,8 +1682,8 @@ function renderAiSuggestion(suggestion) {
       </div>
       <div class="ai-suggestion-reason">${escapeHtml(suggestion.reason)}</div>
       <div class="ai-suggestion-actions">
-        <button class="primary-action" data-action="accept-ai-suggestion">${currentLanguage === "zh" ? "接受并应用" : "Accept & apply"}</button>
-        <button class="soft-btn" data-action="ignore-ai-suggestion">${currentLanguage === "zh" ? "忽略" : "Ignore"}</button>
+        <button class="primary-action" data-action="accept-ai-suggestion">${t("acceptAiSuggestion")}</button>
+        <button class="soft-btn" data-action="ignore-ai-suggestion">${t("ignoreAiSuggestion")}</button>
       </div>
     </article>
   `;
@@ -1732,13 +1751,13 @@ function getDisplayMemories(items) {
 function renderMemoryItem(memory) {
   const confidence = Math.round((memory.confidence || 0) * 100);
   const keyLabel = `${memory.keyType}: ${memory.key}`;
-  const mergedLabel = memory.mergedCount > 1 ? ` · 合并 ${memory.mergedCount} 条` : "";
+  const mergedLabel = memory.mergedCount > 1 ? ` · ${t("mergedCount", { count: memory.mergedCount })}` : "";
   return `
     <article class="memory-item" data-memory-id="${escapeHtml(memory.id)}" data-memory-ids="${escapeHtml((memory.ids || [memory.id]).join(","))}">
       <div class="memory-head">
         <div>
           <div class="memory-title">${escapeHtml(translateCategoryName(memory.groupName))}</div>
-          <div class="memory-meta">${escapeHtml(keyLabel)} · 命中 ${memory.hitCount || 0} 次 · ${escapeHtml(sourceLabel(memory.source))}${mergedLabel}</div>
+          <div class="memory-meta">${escapeHtml(keyLabel)} · ${escapeHtml(t("hitCount", { count: memory.hitCount || 0 }))} · ${escapeHtml(sourceLabel(memory.source))}${escapeHtml(mergedLabel)}</div>
         </div>
         <span class="badge">${confidence}%</span>
       </div>
