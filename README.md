@@ -18,11 +18,19 @@
   <img alt="License" src="https://img.shields.io/badge/License-MIT-111827" />
 </p>
 
+<p align="center">
+  <img src="assets/tab-inbox-ai-workspace.png" alt="Tab Inbox AI automatic classification and automated workspace overview" />
+</p>
+
 ## What is Tab Inbox?
 
 Tab Inbox replaces a tiny extension popup with a full-page command center for tab cleanup. It helps you scan open tabs, group related pages, save useful links for later, archive context, and keep a temporary workspace for the thing you are doing right now.
 
 It is designed to be local-first: rule matching, grouping memory, dashboard state, saved items, and archives live in Chrome extension storage. AI grouping is optional and only runs after the user configures an OpenAI-compatible endpoint.
+
+## Core automation
+
+Tab Inbox can use AI-assisted automation to classify unknown tabs, suggest safe grouping actions, and keep reviewable history before any reusable rules are created. Its automated workspace flow collects pages from the same task context, surfaces uncertain pages for review, and lets you enter a focused workbench without turning temporary organization into permanent rules.
 
 ## Highlights
 
