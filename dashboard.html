@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tab Inbox</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <p id="dateLine" class="date-line"></p>
+        <h1>Tab Inbox</h1>
+        <p class="tagline" data-i18n="appTagline">把拥挤标签页整理成可执行任务流</p>
+        <input id="globalSearchInput" class="global-search" type="search" placeholder="搜索命令或标签" data-i18n-placeholder="globalSearchPlaceholder" />
+      </div>
+      <div class="top-actions">
+        <button id="languageToggleBtn" class="soft-btn language-toggle" type="button" aria-label="Switch language">EN</button>
+        <button id="refreshBtn" class="soft-btn" data-i18n="refresh">刷新</button>
+        <button id="closeExtraDashboardsBtn" class="soft-btn" data-i18n="closeExtraDashboards" hidden>关闭多余面板</button>
+      </div>
+    </header>
+
+    <div class="workspace-shell">
+      <aside class="command-rail" aria-label="Command Center">
+        <div class="rail-brand">
+          <strong data-i18n="commandCenter">指挥中心</strong>
+          <span data-i18n="aiSuite">AI 效率套件</span>
+        </div>
+        <nav class="rail-nav" aria-label="Dashboard navigation">
+          <a class="is-active" href="#open-tabs" data-rail-target="open-tabs">
+            <span class="rail-icon">T</span>
+            <span data-i18n="tabInbox">标签收件箱</span>
+          </a>
+          <a href="#automation" data-rail-target="automation">
+            <span class="rail-icon">+</span>
+            <span data-i18n="automationHealth">自动化健康</span>
+          </a>
+          <a href="#workspace" data-rail-target="workspace">
+            <span class="rail-icon">W</span>
+            <span data-i18n="workspace">工作台</span>
+          </a>
+          <a href="#categories" data-rail-target="categories">
+            <span class="rail-icon">C</span>
+            <span data-i18n="categories">分类</span>
+          </a>
+          <a href="#saved" data-rail-target="saved">
+            <span class="rail-icon">L</span>
+            <span data-i18n="laterList">稍后清单</span>
+          </a>
+          <a href="#ai" data-rail-target="ai">
+            <span class="rail-icon">AI</span>
+            <span data-i18n="aiSuggestions">AI 建议</span>
+          </a>
+          <a href="#memory" data-rail-target="memory">
+            <span class="rail-icon">M</span>
+            <span data-i18n="memory">记忆</span>
+          </a>
+          <a href="#rules" data-rail-target="rules">
+            <span class="rail-icon">R</span>
+            <span data-i18n="rulesAndLogs">规则与记录</span>
+          </a>
+          <a href="#settings" data-rail-target="settings">
+            <span class="rail-icon">S</span>
+            <span data-i18n="settings">设置</span>
+          </a>
+        </nav>
+        <div class="rail-status">
+          <strong data-i18n="proStatus">效率状态</strong>
+          <span id="railManagedText" data-i18n="managedTabs">已整理标签</span>
+          <div class="rail-progress"><span id="railProgressBar" style="width: 0%"></span></div>
+        </div>
+      </aside>
+
+      <div class="content-stack">
+        <section class="summary-strip" aria-label="当前状态" data-i18n-aria-label="currentStatus">
+          <article class="metric-card is-active" data-metric-filter="all" tabindex="0" role="button">
+            <strong id="domainCount">0</strong>
+            <span data-i18n="groupTasks">组任务</span>
+          </article>
+          <article class="metric-card" data-metric-filter="all" tabindex="0" role="button">
+            <strong id="openTabCount">0</strong>
+            <span data-i18n="openTabs">打开标签</span>
+          </article>
+          <article class="metric-card" data-metric-filter="duplicates" tabindex="0" role="button">
+            <strong id="duplicateCount">0</strong>
+            <span data-i18n="duplicates">重复标签</span>
+          </article>
+          <article class="metric-card" data-metric-filter="focus" tabindex="0" role="button">
+            <strong id="focusCount">0</strong>
+            <span data-i18n="focusGroups">待聚焦组</span>
+          </article>
+        </section>
+
+    <section class="dashboard-layout">
+      <section id="open-tabs" class="main-column app-view" data-view-panel="open-tabs">
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="openNow">现在打开</h2>
+            <p id="resultSummary">按网站聚合。先处理整组，再处理单个页面。</p>
+          </div>
+          <input id="searchInput" type="search" placeholder="搜索网站或标题" data-i18n-placeholder="searchPlaceholder" />
+        </div>
+        <div class="toolbar" aria-label="整理工具" data-i18n-aria-label="organizeTools">
+          <div class="segmented" role="tablist" aria-label="视图筛选" data-i18n-aria-label="viewFilter">
+            <button class="segment is-active" data-filter="all" type="button" data-i18n="all">全部</button>
+            <button class="segment" data-filter="focus" type="button" data-i18n="focus">待聚焦</button>
+            <button class="segment" data-filter="duplicates" type="button" data-i18n="duplicateFilter">重复</button>
+          </div>
+          <div class="toolbar-actions">
+            <button id="classifyVisibleBtn" class="primary-action" type="button" data-i18n="runAutoGroup">运行自动分组</button>
+            <button id="closeAllDupesBtn" class="soft-btn danger-action" type="button" data-i18n="closeAllDuplicates">关闭全部重复</button>
+            <button id="clearSearchBtn" class="soft-btn" type="button" data-i18n="clearSearch" hidden>清空搜索</button>
+          </div>
+        </div>
+        <div id="domainList" class="domain-list" aria-live="polite"></div>
+      </section>
+
+      <aside class="side-column">
+        <section id="automation" class="automation-panel app-view" data-view-panel="automation">
+          <div class="section-head compact">
+            <div>
+              <h2 data-i18n="automation">自动分组</h2>
+              <p id="automationStatus">正在读取状态</p>
+            </div>
+          </div>
+          <div class="health-grid" aria-label="自动分组状态" data-i18n-aria-label="automationStatusLabel">
+            <div class="health-item">
+              <span>AI</span>
+              <strong id="aiStateText">关闭</strong>
+            </div>
+            <div class="health-item">
+              <span data-i18n="rules">规则</span>
+              <strong id="ruleCountText">0</strong>
+            </div>
+            <div class="health-item">
+              <span data-i18n="suggestions">建议</span>
+              <strong id="pendingSuggestionText">0</strong>
+            </div>
+            <div class="health-item">
+              <span data-i18n="records">记录</span>
+              <strong id="recentLogCountText">0</strong>
+            </div>
+            <div class="health-item">
+              <span>Token</span>
+              <strong id="aiTokenText">0</strong>
+            </div>
+            <div class="health-item">
+              <span data-i18n="memory">记忆</span>
+              <strong id="memoryCountText">0</strong>
+            </div>
+          </div>
+        </section>
+
+        <section id="workspace" class="workspace-panel app-view" data-view-panel="workspace">
+          <div class="section-head compact">
+            <div>
+              <h2 id="workspaceTitle" data-i18n="workspace">工作台</h2>
+              <p id="workspaceCount">0 个页面</p>
+            </div>
+            <div class="panel-actions">
+              <button id="openWorkspaceBtn" class="soft-btn" data-i18n="openAll">打开全部</button>
+              <button id="clearWorkspaceBtn" class="soft-btn" data-i18n="clear">清空</button>
+            </div>
+          </div>
+          <div id="workspaceList" class="workspace-list"></div>
+        </section>
+
+        <section id="categories" class="categories-panel app-view" data-view-panel="categories">
+          <div class="section-head compact">
+            <div>
+              <h2 data-i18n="categories">分类</h2>
+              <p id="categoryCount">0 个分类</p>
+            </div>
+          </div>
+          <form id="categoryForm" class="category-form">
+            <input id="categoryNameInput" type="text" placeholder="新增分类名称" data-i18n-placeholder="newCategoryName" maxlength="24" />
+            <input id="categoryKeywordInput" type="text" placeholder="关键词或域名，可选" data-i18n-placeholder="keywordOrDomain" />
+            <div class="category-form-actions">
+              <button id="addCategoryBtn" class="primary-action" type="submit" data-i18n="add">添加</button>
+              <button id="cancelCategoryEditBtn" class="soft-btn" type="button" data-i18n="cancelEdit" hidden>取消编辑</button>
+            </div>
+          </form>
+          <div id="categoryList" class="category-list"></div>
+        </section>
+
+        <section id="saved" class="saved-panel app-view" data-view-panel="saved">
+          <div class="section-head compact">
+            <div>
+              <h2 data-i18n="later">稍后</h2>
+              <p id="savedCount">0 个页面</p>
+            </div>
+            <div class="panel-actions">
+              <button id="savedToWorkspaceBtn" class="soft-btn" data-i18n="addToWorkspace">加入工作台</button>
+              <button id="clearSavedBtn" class="soft-btn" data-i18n="clear">清空</button>
+            </div>
+          </div>
+          <div id="savedList" class="saved-list"></div>
+        </section>
+
+        <details id="settings" class="settings-panel app-view" data-view-panel="settings" open>
+          <summary data-i18n="automationSettings">自动分组设置</summary>
+          <div class="settings-body">
+            <label class="toggle-row">
+              <input id="automationEnabledInput" type="checkbox" />
+              <span data-i18n="enableAutomation">启用本地自动分组</span>
+            </label>
+            <label class="field-row">
+              <span data-i18n="automationLevel">自动化强度</span>
+              <select id="automationLevelSelect">
+                <option value="conservative" data-i18n="levelConservative">保守</option>
+                <option value="balanced" data-i18n="levelBalanced">平衡</option>
+                <option value="aggressive" data-i18n="levelAggressive">积极</option>
+              </select>
+            </label>
+            <div class="settings-toggles">
+              <label class="toggle-row compact-toggle">
+                <input id="enableMemoryInput" type="checkbox" />
+                <span data-i18n="enableMemorySetting">启用稳定记忆</span>
+              </label>
+              <label class="toggle-row compact-toggle">
+                <input id="enableBuiltinInput" type="checkbox" />
+                <span data-i18n="enableBuiltinSetting">启用内置分类</span>
+              </label>
+              <label class="toggle-row compact-toggle">
+                <input id="enableCustomGroupsInput" type="checkbox" />
+                <span data-i18n="enableCustomGroupsSetting">启用自定义分组</span>
+              </label>
+              <label class="toggle-row compact-toggle">
+                <input id="createBuiltinGroupsInput" type="checkbox" />
+                <span data-i18n="createBuiltinGroupsSetting">允许内置分类创建分组</span>
+              </label>
+            </div>
+            <div class="panel-actions">
+              <button id="saveAutomationSettingsBtn" class="primary-action" type="button" data-i18n="saveAutomationSettings">保存自动化设置</button>
+            </div>
+            <div class="settings-divider"></div>
+            <label class="toggle-row">
+              <input id="aiEnabledInput" type="checkbox" />
+              <span data-i18n="enableAi">启用 AI 补全未知分类</span>
+            </label>
+            <label class="field-row">
+              <span>Base URL</span>
+              <input id="aiBaseUrlInput" type="url" placeholder="https://api.openai.com/v1" />
+            </label>
+            <label class="field-row">
+              <span>Model</span>
+              <input id="aiModelInput" type="text" placeholder="gpt-4.1-mini" />
+            </label>
+            <label class="field-row">
+              <span>API Key</span>
+              <input id="aiApiKeyInput" type="password" placeholder="sk-..." autocomplete="off" />
+            </label>
+            <div class="field-grid">
+              <label class="field-row">
+                <span data-i18n="autoThreshold">自动阈值</span>
+                <input id="aiAutoThresholdInput" type="number" min="0.5" max="1" step="0.01" />
+              </label>
+              <label class="field-row">
+                <span data-i18n="suggestThreshold">建议阈值</span>
+                <input id="aiSuggestThresholdInput" type="number" min="0.1" max="1" step="0.01" />
+              </label>
+              <label class="field-row">
+                <span data-i18n="dailyLimit">每日上限</span>
+                <input id="aiDailyLimitInput" type="number" min="0" step="1" />
+              </label>
+              <label class="field-row">
+                <span data-i18n="cooldownHours">冷却小时</span>
+                <input id="aiCooldownInput" type="number" min="1" step="1" />
+              </label>
+            </div>
+            <div class="panel-actions">
+              <button id="saveAiSettingsBtn" class="primary-action" type="button" data-i18n="saveAiSettings">保存 AI 设置</button>
+              <button id="testAiSettingsBtn" class="soft-btn" type="button" data-i18n="testConnection">测试连接</button>
+            </div>
+          </div>
+        </details>
+
+        <section id="ai" class="ai-panel app-view" data-view-panel="ai">
+          <div class="section-head compact">
+            <div>
+              <h2 data-i18n="aiSuggestions">AI 建议</h2>
+              <p id="aiSuggestionCount">0 条待确认</p>
+            </div>
+          </div>
+          <div id="aiSuggestionList" class="ai-suggestion-list"></div>
+        </section>
+
+        <section id="ai-history" class="ai-history-panel app-view" data-view-panel="ai">
+          <div class="section-head compact">
+            <div>
+              <h2 data-i18n="aiHistory">AI 分类记录</h2>
+              <p id="aiHistoryCount">0 个页面</p>
+            </div>
+          </div>
+          <div id="aiHistoryList" class="ai-history-list"></div>
+        </section>
+
+        <section id="ai-window-history" class="ai-history-panel app-view" data-view-panel="ai">
+          <div class="section-head compact">
+            <div>
+              <h2>窗口整理历史</h2>
+              <p id="aiWindowPlanCount">0 个方案</p>
+            </div>
+          </div>
+          <div id="aiWindowPlanList" class="ai-window-plan-list"></div>
+        </section>
+
+        <section id="memory" class="memory-panel app-view" data-view-panel="memory">
+          <div class="section-head compact">
+            <div>
+              <h2 data-i18n="memoryModule">记忆模块</h2>
+              <p id="memoryCount">0 条稳定记忆</p>
+            </div>
+          </div>
+          <div id="memoryList" class="memory-list"></div>
+        </section>
+
+        <details id="rules" class="rules-panel app-view" data-view-panel="rules" open>
+          <summary>
+            <span data-i18n="rulesAndLogs">规则与记录</span>
+            <small id="rulesPanelMeta">0 条规则</small>
+          </summary>
+          <div class="rules-body">
+            <div class="rules-column">
+              <div class="mini-section-head">
+                <strong data-i18n="activeRules">生效规则</strong>
+                <span id="rulesCount">0</span>
+              </div>
+              <form id="ruleForm" class="rule-form">
+                <div class="rule-form-grid">
+                  <select id="ruleActionSelect" aria-label="Rule action">
+                    <option value="group" data-i18n="ruleActionGroup">分组</option>
+                    <option value="never_group" data-i18n="ruleActionNever">永不分组</option>
+                    <option value="exclude_group" data-i18n="ruleActionExclude">排除</option>
+                  </select>
+                  <select id="ruleTypeSelect" aria-label="Rule type">
+                    <option value="domain">domain</option>
+                    <option value="path_pattern">path</option>
+                    <option value="normalized_url">URL</option>
+                    <option value="keyword">keyword</option>
+                    <option value="origin">origin</option>
+                    <option value="regex">regex</option>
+                  </select>
+                </div>
+                <input id="ruleValueInput" type="text" placeholder="规则值" data-i18n-placeholder="ruleValuePlaceholder" />
+                <select id="ruleGroupNameInput" aria-label="Target group"></select>
+                <button id="addRuleBtn" class="primary-action" type="submit" data-i18n="addRule">添加规则</button>
+              </form>
+              <div id="rulesList" class="rules-list"></div>
+            </div>
+            <div class="rules-column">
+              <div class="mini-section-head">
+                <strong data-i18n="recentRecords">最近记录</strong>
+                <span id="logsCount">0</span>
+              </div>
+              <div id="logsList" class="logs-list"></div>
+            </div>
+          </div>
+        </details>
+      </aside>
+    </section>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="dashboard.js"></script>
+</body>
+</html>
