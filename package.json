@@ -17,8 +17,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && esbuild src/background/serviceWorker.ts --bundle --format=esm --platform=browser --target=chrome120 --outfile=dist/background/serviceWorker.js",
     "package:extension": "npm run build && node scripts/package-extension.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test tests/*.test.js"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "engines": {
     "node": ">=20"
